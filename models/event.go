@@ -11,12 +11,12 @@ type Event struct {
 	Description string    `binding:"required"`
 	Location    string    `binding:"required"`
 	DateTime    time.Time `binding:"required"`
-	UserID      int
+	UserID      int64
 }
 
 var events = []Event{}
 
-func (e Event) Save() error {
+func (e *Event) Save() error {
 	// later: add it to a database
 	query := `INSERT INTO events(name,description,location,dateTime,user_id) 
 	VALUES (?, ?, ?, ?, ?)`
@@ -108,5 +108,34 @@ func (event Event) Delete() error {
 
 	_, err = stmt.Exec(event.ID)
 
+	return err
+}
+
+func (event Event) Register(userId int64) error {
+	query := "INSERT INTO registrations(event_id, user_id) VALUES(?, ?)"
+	stmt, err := db.DB.Prepare(query)
+
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(event.ID, userId)
+
+	return err
+}
+
+func (event Event) CancelRegistration(userID int64) error {
+	query := "DELETE FROM registrations WHERE event_id = ? AND user_id = ?"
+	stmt, err := db.DB.Prepare(query)
+
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(event.ID, userID)
 	return err
 }
